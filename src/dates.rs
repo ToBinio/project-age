@@ -4,11 +4,11 @@ use std::{
     sync::Arc,
 };
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Datelike};
 use futures::future::join_all;
 use tokio::{process::Command, sync::Semaphore};
 
-pub async fn parse_dates(files: &[PathBuf]) -> HashMap<DateTime<Utc>, i32> {
+pub async fn parse_dates(files: &[PathBuf]) -> HashMap<String, i32> {
     let semaphore = Arc::new(Semaphore::new(24));
 
     let tasks = files.iter().map(|file| {
@@ -46,12 +46,13 @@ async fn blame(path: &Path) -> String {
     String::from_utf8_lossy(&output).to_string()
 }
 
-fn get_dates(content: &str) -> Vec<DateTime<Utc>> {
+fn get_dates(content: &str) -> Vec<String> {
     content
         .lines()
         .filter(|line| line.starts_with("committer-time"))
         .map(|line| line.split(" ").nth(1).unwrap().to_string())
         .map(|line| line.parse().unwrap())
         .map(|date| DateTime::from_timestamp_secs(date).unwrap())
+        .map(|date| format!("{}-{:02}", date.year(), date.month()))
         .collect()
 }
