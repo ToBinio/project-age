@@ -1,7 +1,9 @@
 use futures::future::join_all;
+use indicatif::{ProgressBar, ProgressStyle};
 use std::{
     path::{Path, PathBuf},
     sync::Arc,
+    time::Duration,
     vec,
 };
 use tokio::{fs, process::Command, sync::Semaphore};
@@ -11,7 +13,15 @@ use async_recursion::async_recursion;
 pub async fn get_all_files() -> Vec<PathBuf> {
     let semaphore = Arc::new(Semaphore::new(num_cpus::get()));
 
-    get_files(PathBuf::from("."), semaphore.clone()).await
+    let pb = ProgressBar::new_spinner();
+    pb.enable_steady_tick(Duration::from_millis(120));
+    pb.set_style(ProgressStyle::default_spinner());
+    pb.set_message("Finding files...");
+
+    let files = get_files(PathBuf::from("."), semaphore.clone()).await;
+
+    pb.finish_with_message(format!("{} files found", files.len()));
+    files
 }
 
 #[async_recursion]

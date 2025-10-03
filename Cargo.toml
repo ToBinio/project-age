@@ -6,7 +6,9 @@ edition = "2024"
 [dependencies]
 async-recursion = "1.1.1"
 chrono = "0.4.42"
+console = "0.16.1"
 futures = "0.3.31"
+indicatif = "0.18.0"
 num_cpus = "1.17.0"
 plotters = "0.3.7"
 tokio = { version = "1.47.1", features = ["full"] }
