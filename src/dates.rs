@@ -9,7 +9,7 @@ use futures::future::join_all;
 use tokio::{process::Command, sync::Semaphore};
 
 pub async fn parse_dates(files: &[PathBuf]) -> HashMap<String, i32> {
-    let semaphore = Arc::new(Semaphore::new(24));
+    let semaphore = Arc::new(Semaphore::new(num_cpus::get()));
 
     let tasks = files.iter().map(|file| {
         let semaphore = semaphore.clone();

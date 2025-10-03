@@ -9,7 +9,7 @@ use tokio::{fs, process::Command, sync::Semaphore};
 use async_recursion::async_recursion;
 
 pub async fn get_all_files() -> Vec<PathBuf> {
-    let semaphore = Arc::new(Semaphore::new(24));
+    let semaphore = Arc::new(Semaphore::new(num_cpus::get()));
 
     get_files(PathBuf::from("."), semaphore.clone()).await
 }
