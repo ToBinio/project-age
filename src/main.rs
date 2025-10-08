@@ -13,6 +13,7 @@ mod plot;
 async fn main() {
     let mut data = vec![];
 
+    //TODO - correctly remove days, hours, ... from now so commits are correctly calculated
     let mut now = Utc::now();
     let map = get_data().await;
 

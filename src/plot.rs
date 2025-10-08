@@ -3,37 +3,45 @@ use std::collections::HashMap;
 use chrono::{DateTime, Utc};
 use plotters::{
     chart::{ChartBuilder, LabelAreaPosition},
-    prelude::{BitMapBackend, IntoDrawingArea, IntoSegmentedCoord},
+    prelude::{BitMapBackend, IntoDrawingArea, IntoSegmentedCoord, Rectangle},
     series::Histogram,
-    style::{Color, Palette, Palette99, WHITE},
+    style::{BLACK, Color, Palette, Palette99, WHITE},
 };
 
-//TODO - flip data 90°
+type TimeFrame = DateTime<Utc>;
+type LineAgeKey = String;
 
-pub fn plot_data(data: Vec<(DateTime<Utc>, HashMap<String, i32>)>) {
-    let mut keys = data
+pub fn plot_data(data: Vec<(TimeFrame, HashMap<LineAgeKey, i32>)>) {
+    let mut line_age_keys = data
         .iter()
         .map(|(_, v)| v)
         .flat_map(|map| map.iter().map(|(k, _)| k.to_string()))
         .collect::<Vec<_>>();
-    keys.sort();
-    keys.dedup();
+    line_age_keys.sort();
+    line_age_keys.dedup();
+    line_age_keys.reverse();
 
     let mut result = vec![];
-    for index in (0..data.len()).rev() {
+    for index in 0..line_age_keys.len() {
         let mut values = vec![];
-        for key in keys.iter() {
-            let mut result = (key, 0);
+        for (time_frame, data) in data.iter() {
+            let mut result = (time_frame.format("%Y-%m").to_string(), 0);
 
-            for date in data[0..index].iter() {
-                result.1 += date.1.get(key).unwrap_or(&0);
+            for date in line_age_keys[0..index].iter() {
+                result.1 += data.get(date).unwrap_or(&0);
             }
 
             values.push(result);
         }
 
-        result.push((data[index].0, values));
+        result.push((data[index].0.format("%Y-%m").to_string(), values));
     }
+
+    let keys = data
+        .iter()
+        .map(|(date, _)| date.format("%Y-%m").to_string())
+        .rev()
+        .collect::<Vec<_>>();
 
     let max = result
         .iter()
@@ -53,17 +61,28 @@ pub fn plot_data(data: Vec<(DateTime<Utc>, HashMap<String, i32>)>) {
 
     ctx.configure_mesh().draw().unwrap();
 
-    for (index, (_date, values)) in result.into_iter().enumerate() {
-        let color = Palette99::pick(index).mix(0.5);
+    for (index, (date, values)) in result.iter().rev().enumerate() {
+        let color = Palette99::pick(index);
+
+        let data = values
+            .iter()
+            .map(|(label, value)| (label, *value))
+            .collect::<Vec<_>>();
 
         ctx.draw_series(
             Histogram::vertical(&ctx)
                 .style(color.filled())
                 .margin(1)
-                .data(values.into_iter()),
+                .data(data),
         )
-        .unwrap();
+        .unwrap()
+        .label(date)
+        .legend(move |(x, y)| Rectangle::new([(x - 5, y - 5), (x + 5, y + 5)], color.filled()));
     }
 
+    ctx.configure_series_labels()
+        .border_style(BLACK)
+        .draw()
+        .unwrap();
     root_area.present().unwrap();
 }
