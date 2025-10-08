@@ -27,14 +27,14 @@ pub fn plot_data(data: Vec<(TimeFrame, HashMap<LineAgeKey, i32>)>) {
         for (time_frame, data) in data.iter() {
             let mut result = (time_frame.format("%Y-%m").to_string(), 0);
 
-            for date in line_age_keys[0..index].iter() {
-                result.1 += data.get(date).unwrap_or(&0);
+            for line_age_key in line_age_keys[index..line_age_keys.len()].iter() {
+                result.1 += data.get(line_age_key).unwrap_or(&0);
             }
 
             values.push(result);
         }
 
-        result.push((data[index].0.format("%Y-%m").to_string(), values));
+        result.push((line_age_keys[index].to_string(), values));
     }
 
     let keys = data
@@ -42,6 +42,8 @@ pub fn plot_data(data: Vec<(TimeFrame, HashMap<LineAgeKey, i32>)>) {
         .map(|(date, _)| date.format("%Y-%m").to_string())
         .rev()
         .collect::<Vec<_>>();
+
+    println!("{:?} - {:?}", line_age_keys, keys);
 
     let max = result
         .iter()
@@ -61,7 +63,7 @@ pub fn plot_data(data: Vec<(TimeFrame, HashMap<LineAgeKey, i32>)>) {
 
     ctx.configure_mesh().draw().unwrap();
 
-    for (index, (date, values)) in result.iter().rev().enumerate() {
+    for (index, (date, values)) in result.iter().enumerate() {
         let color = Palette99::pick(index);
 
         let data = values
